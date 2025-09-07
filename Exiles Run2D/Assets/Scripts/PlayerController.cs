@@ -9,50 +9,73 @@ public class PlayerController : NetworkBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
 
-    private Rigidbody2D rb;
     private Vector2 moveInput;
 
     private GameObject cameraObj;
 
     private Vector3 cameraPos;
 
-    public NetworkVariable<Vector3> position = new NetworkVariable<Vector3>();
-
-    private void Awake()
-    {
-        rb = GetComponent<Rigidbody2D>();
-        if (cameraObj == null )
-        {
-            cameraObj = GetComponentInChildren<Camera>().gameObject;
-        }
-    }
-
     void Update()
     {
-        rb.linearVelocity = moveInput * moveSpeed;
+        if (!IsOwner)
+        {
+
+            return;
+        }
+        else
+        {
+            if (moveInput.x != 0 || moveInput.y != 0)
+            {
+                Vector3 moveDirection = new Vector3(moveInput.x, moveInput.y, 0f).normalized;
+
+                MovePlayerServerRpc(moveDirection);
+            }
+        }
     }
 
     public override void OnNetworkSpawn()
     {
         if (IsOwner)
         {
-            MoveRpc();
-            //rb.linearVelocity = moveInput * moveSpeed;
+            if (cameraObj == null)
+            {
+                cameraObj = GetComponentInChildren<Camera>().gameObject;
+            }
         }
-        else
+        else //if not owner
         {
+            #region TurnOffOthersPlayersComponents
+            //Don't need other audio listener or Camera acive
             AudioListener listener = GetComponentInChildren<AudioListener>();
-            if (listener.enabled )
+            Camera othersCamera = GetComponentInChildren<Camera>();
+            PlayerInput otherPlayerInput = GetComponent<PlayerInput>();
+
+            if (listener.enabled)
             {
                 listener.enabled = false;
+                //Reset listener for when more join
+                listener = null;
             }
+
+            if (othersCamera.enabled)
+            {
+                othersCamera.enabled = false;
+                //Reset camera obj to allow others to be shut off when joined
+                othersCamera = null;
+            }
+
+            if (otherPlayerInput.enabled)
+            {
+                otherPlayerInput.enabled = false;
+            }
+            #endregion
         }
     }
 
-    [Rpc(SendTo.Server)]
-    public void MoveRpc(RpcParams rpcParams = default)
+    [ServerRpc]
+    public void MovePlayerServerRpc(Vector3 direction)
     {
-        rb.linearVelocity = moveInput * moveSpeed;
+        transform.Translate(direction * moveSpeed * Time.deltaTime);
     }
 
     public void Move(InputAction.CallbackContext context)
@@ -61,6 +84,7 @@ public class PlayerController : NetworkBehaviour
 
         if (context.performed)
         {
+            
             StartCoroutine(CameraMoveDelay());
 
             cameraObj.transform.localPosition = cameraPos.normalized;

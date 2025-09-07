@@ -4,7 +4,7 @@
 #
 .utmp/
 [Ll]ibrary/
-/[Tt]emp/
+[Tt]emp/
 /[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
@@ -97,3 +97,5 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+Exiles Run2D/UserSettings/Layouts/default-6000.dwlt
+Exiles Run2D/UserSettings/Layouts/default-6000.dwlt
